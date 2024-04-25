@@ -135,16 +135,6 @@ func NewRoom(name string, x, y int) *strucdure.Room {
 	return room
 }
 
-func PrintPaths(paths [][]*strucdure.Room) {
-	for i, path := range paths {
-		fmt.Printf("Chemin %d: ", i+1)
-		for _, room := range path {
-			fmt.Printf("%d ", room.ID) // Utiliser l'ID de la salle au lieu de son nom
-		}
-		fmt.Println()
-	}
-}
-
 func PrintFarmDetails(farm *strucdure.AntFarm) {
 	if farm == nil {
 		fmt.Println("No farm data available.")
@@ -287,5 +277,22 @@ func SimulateAnts(paths [][]*strucdure.Room, numAnts int) {
 		}
 
 		turn++
+	}
+}
+func PrintPaths(paths [][]*strucdure.Room) {
+	if len(paths) == 0 {
+		fmt.Println("No paths meet the criteria.")
+		return
+	}
+	fmt.Println("Displaying all detailed paths found:")
+	for i, path := range paths {
+		fmt.Printf("Path %d: ", i+1)
+		for j, room := range path {
+			if j > 0 {
+				fmt.Print(" -> ")
+			}
+			fmt.Printf("%s (ID %d)", room.Name, room.ID)
+		}
+		fmt.Println() // Newline for the next path
 	}
 }

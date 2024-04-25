@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+
 	"lem/antfarm"
 	"lem/chemain"
 	structure "lem/strucdure"
@@ -59,36 +60,47 @@ func PrintLinks(farm *structure.AntFarm) {
 		}
 	}
 }
-
 func main() {
-    if len(os.Args) < 2 {
-        fmt.Println("Usage: go run . <path_to_input_file>")
-        return
-    }
+	// Open the file and parse the ant farm
+	file, err := os.Open("txt/fourmie.txt") // Make sure the file path is correct
+	if err != nil {
+		fmt.Println("Error opening file:", err)
+		return
+	}
+	defer file.Close()
 
-    inputFilePath := os.Args[1]
+	// Parse the ant farm from the file
+	farm, err := chemain.ParseAntFarm(file)
+	if err != nil {
+		fmt.Println("Error parsing ant farm:", err)
+		return
+	}
 
-    file, err := os.Open(inputFilePath)
-    if err != nil {
-        fmt.Printf("Failed to open the file: %s\n", err)
-        return
-    }
-    defer file.Close()
+	// Print the details of the entire ant farm
+	chemain.PrintFarmDetails(farm)
 
-    farm, err := chemain.ParseAntFarm(file)
-    if err != nil {
-        fmt.Printf("Error parsing ant farm: %s\n", err)
-        return
-    }
+	// Find all possible paths using BFS
+	allPaths, err := antfarm.FindAllPathsBFS(farm)
+	if err != nil {
+		fmt.Println("Error finding paths:", err)
+		return
+	}
+	independentPaths := antfarm.FindIndependentPaths(allPaths)
 
-    paths, err := antfarm.FindAllPathsBFS(farm)
-    if err != nil {
-        fmt.Printf("Error finding paths using BFS: %s\n", err)
-        return
-    }
+	// Print the independent path combinations
+	for i, paths := range independentPaths {
+		fmt.Printf("Combination %d:\n", i+1)
+		for _, path := range paths {
+			for _, room := range path {
+				fmt.Printf("%s (ID %d) -> ", room.Name, room.ID)
+			}
+			fmt.Println("End of Path")
+		}
 
-    filteredPaths := filterAndSortPaths(paths)
-    chemain.SimulateAnts(filteredPaths, farm.Ants)
+	}
+
+	// Print all the paths found
+	chemain.PrintPaths(allPaths)
 }
 
 // filterAndSortPaths filtre et trie les chemins pour ne garder que ceux avec au maximum 7 étapes.

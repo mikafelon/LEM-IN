@@ -78,18 +78,63 @@ func isInPath(path []*structure.Room, room *structure.Room) bool {
 
 // printPaths affiche les chemins trouvés
 func PrintPaths(paths [][]*structure.Room) {
-    if len(paths) == 0 {
-        fmt.Println("No paths meet the criteria.")
-        return
-    }
-    for i, path := range paths {
-        fmt.Printf("Path %d (length %d): ", i+1, len(path))
-        for j, room := range path {
-            if j > 0 {
-                fmt.Print(" -> ")
-            }
-            fmt.Print(room.Name)
-        }
-        fmt.Println()
-    }
+	if len(paths) == 0 {
+		fmt.Println("No paths meet the criteria.")
+		return
+	}
+	for i, path := range paths {
+		fmt.Printf("Path %d (length %d): ", i+1, len(path))
+		for j, room := range path {
+			if j > 0 {
+				fmt.Print(" -> ")
+			}
+			fmt.Print(room.Name)
+		}
+		fmt.Println()
+	}
+}
+
+// FindIndependentPaths returns all combinations of paths where no two paths share any room.
+func FindIndependentPaths(allPaths [][]*structure.Room) [][][]*structure.Room {
+	var result [][][]*structure.Room
+	// Use a recursive function to generate combinations
+	var findCombinations func(index int, current [][]*structure.Room)
+	findCombinations = func(index int, current [][]*structure.Room) {
+		// When a combination is formed, append it to result
+		if len(current) > 1 {
+			result = append(result, current)
+		}
+		for i := index; i < len(allPaths); i++ {
+			// Check if the current path can be added without overlapping
+			canAdd := true
+			for _, existingPath := range current {
+				if hasCommonRooms(existingPath, allPaths[i]) {
+					canAdd = false
+					break
+				}
+			}
+			if canAdd {
+				// Recursively add path and find further combinations
+				findCombinations(i+1, append(current, allPaths[i]))
+			}
+		}
+	}
+
+	// Initialize recursive call with an empty set
+	findCombinations(0, [][]*structure.Room{})
+	return result
+}
+
+// hasCommonRooms checks if two paths have any room in common.
+func hasCommonRooms(path1, path2 []*structure.Room) bool {
+	roomSet := make(map[int]bool) // Use room ID for uniqueness
+	for _, room := range path1 {
+		roomSet[room.ID] = true
+	}
+	for _, room := range path2 {
+		if roomSet[room.ID] {
+			return true
+		}
+	}
+	return false
 }
