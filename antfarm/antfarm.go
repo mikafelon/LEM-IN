@@ -6,59 +6,62 @@ import (
 	"sort"
 )
 
-// FindAllPathsBFS trouve tous les chemins de 'start' à 'end' à travers des salles intermédiaires en utilisant BFS.
+// FindAllPathsBFS trouve tous les chemins possibles de 'start' à 'end' en utilisant l'algorithme de recherche en largeur (BFS).
 func FindAllPathsBFS(farm *structure.AntFarm) ([][]*structure.Room, error) {
+	// Vérifie si la salle de départ ou d'arrivée n'est pas définie
 	if farm.Start == nil || farm.End == nil {
-		return nil, fmt.Errorf("start or end room not defined")
+		return nil, fmt.Errorf("salle de départ ou de fin non définie")
 	}
 
 	var allPaths [][]*structure.Room
-	paths, err := bfs(farm.Start, farm.End) // Appel à BFS avec un seul start et end
+	paths, err := bfs(farm.Start, farm.End) // Exécute BFS pour trouver les chemins
 	if err != nil {
-		return nil, err // Gérer l'erreur correctement
+		return nil, err // Gère correctement les erreurs rencontrées
 	}
-	allPaths = append(allPaths, paths...)
+	allPaths = append(allPaths, paths...) // Ajoute les chemins trouvés à la liste des tous les chemins
 
 	return allPaths, nil
 }
 
+// bfs réalise une recherche en largeur à partir de la salle de départ jusqu'à la salle d'arrivée.
 func bfs(start, end *structure.Room) ([][]*structure.Room, error) {
 	var allPaths [][]*structure.Room
-	queue := [][]*structure.Room{{start}}
+	queue := [][]*structure.Room{{start}} // Initialise la file avec la salle de départ
 
 	for len(queue) > 0 {
-		path := queue[0]
-		queue = queue[1:]
+		path := queue[0]  // Prend le premier chemin de la file
+		queue = queue[1:] // Enlève ce chemin de la file
 
-		lastRoom := path[len(path)-1]
+		lastRoom := path[len(path)-1] // Dernière salle du chemin
 		if lastRoom == end {
-			allPaths = append(allPaths, append([]*structure.Room(nil), path...))
+			allPaths = append(allPaths, append([]*structure.Room(nil), path...)) // Ajoute le chemin complet si la fin est atteinte
 			continue
 		}
 
+		// Parcourt les salles adjacentes à la dernière salle du chemin
 		for _, nextRoom := range lastRoom.Adjacent {
-			if !isInPath(path, nextRoom) { // Check if nextRoom is already in the current path
-				newPath := append([]*structure.Room(nil), path...)
+			if !isInPath(path, nextRoom) { // Vérifie si la salle suivante n'est pas déjà dans le chemin pour éviter les cycles
+				newPath := append([]*structure.Room(nil), path...) // Crée un nouveau chemin en ajoutant la salle suivante
 				newPath = append(newPath, nextRoom)
-				queue = append(queue, newPath)
+				queue = append(queue, newPath) // Ajoute le nouveau chemin à la file
 			}
 		}
 	}
 	return allPaths, nil
 }
 
-// filterAndSortPaths filtre et trie les chemins pour ne garder que ceux avec au maximum 7 étapes.
+// filterAndSortPaths filtre et trie les chemins pour ne garder que ceux qui ont au maximum 7 étapes.
 func filterAndSortPaths(paths [][]*structure.Room) [][]*structure.Room {
 	var filteredPaths [][]*structure.Room
 
-	// Filtrer les chemins
+	// Filtre les chemins selon leur longueur
 	for _, path := range paths {
-		if len(path) <= 8 { // inclut la salle de départ et la salle d'arrivée dans le compte
+		if len(path) <= 8 { // Inclut la salle de départ et la salle d'arrivée
 			filteredPaths = append(filteredPaths, path)
 		}
 	}
 
-	// Trier les chemins par longueur croissante
+	// Trie les chemins filtrés par longueur croissante
 	sort.Slice(filteredPaths, func(i, j int) bool {
 		return len(filteredPaths[i]) < len(filteredPaths[j])
 	})
@@ -66,7 +69,7 @@ func filterAndSortPaths(paths [][]*structure.Room) [][]*structure.Room {
 	return filteredPaths
 }
 
-// Helper function to check if room is already in path to prevent cycles
+// isInPath vérifie si une salle est déjà présente dans le chemin pour éviter les cycles.
 func isInPath(path []*structure.Room, room *structure.Room) bool {
 	for _, p := range path {
 		if p == room {
@@ -76,14 +79,14 @@ func isInPath(path []*structure.Room, room *structure.Room) bool {
 	return false
 }
 
-// printPaths affiche les chemins trouvés
+// printPaths affiche les chemins trouvés de manière lisible.
 func PrintPaths(paths [][]*structure.Room) {
 	if len(paths) == 0 {
-		fmt.Println("No paths meet the criteria.")
+		fmt.Println("Aucun chemin ne répond aux critères.")
 		return
 	}
 	for i, path := range paths {
-		fmt.Printf("Path %d (length %d): ", i+1, len(path))
+		fmt.Printf("Chemin %d (longueur %d) : ", i+1, len(path))
 		for j, room := range path {
 			if j > 0 {
 				fmt.Print(" -> ")
@@ -94,18 +97,18 @@ func PrintPaths(paths [][]*structure.Room) {
 	}
 }
 
-// FindIndependentPaths returns all combinations of paths where no two paths share any room.
+// FindIndependentPaths retourne toutes les combinaisons de chemins où aucun chemin ne partage une salle avec un autre.
 func FindIndependentPaths(allPaths [][]*structure.Room) [][][]*structure.Room {
 	var result [][][]*structure.Room
-	// Use a recursive function to generate combinations
+	// Fonction récursive pour générer des combinaisons
 	var findCombinations func(index int, current [][]*structure.Room)
 	findCombinations = func(index int, current [][]*structure.Room) {
-		// When a combination is formed, append it to result
+		// Quand une combinaison est formée, l'ajoute au résultat
 		if len(current) > 1 {
 			result = append(result, current)
 		}
 		for i := index; i < len(allPaths); i++ {
-			// Check if the current path can be added without overlapping
+			// Vérifie si le chemin actuel peut être ajouté sans chevauchement
 			canAdd := true
 			for _, existingPath := range current {
 				if hasCommonRooms(existingPath, allPaths[i]) {
@@ -114,20 +117,20 @@ func FindIndependentPaths(allPaths [][]*structure.Room) [][][]*structure.Room {
 				}
 			}
 			if canAdd {
-				// Recursively add path and find further combinations
+				// Ajoute le chemin et trouve plus de combinaisons
 				findCombinations(i+1, append(current, allPaths[i]))
 			}
 		}
 	}
 
-	// Initialize recursive call with an empty set
+	// Initialisation de l'appel récursif avec un ensemble vide
 	findCombinations(0, [][]*structure.Room{})
 	return result
 }
 
-// hasCommonRooms checks if two paths have any room in common.
+// hasCommonRooms vérifie si deux chemins partagent des salles communes.
 func hasCommonRooms(path1, path2 []*structure.Room) bool {
-	roomSet := make(map[int]bool) // Use room ID for uniqueness
+	roomSet := make(map[int]bool) // Utilise l'ID de la salle pour l'unicité
 	for _, room := range path1 {
 		roomSet[room.ID] = true
 	}
